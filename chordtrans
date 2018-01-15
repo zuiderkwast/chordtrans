@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+
+# Copyright Viktor Söderqvist, 2018
+# License: MIT
+
+use strict;
+
+die "Usage: $0 [+-]NUMBER FILE\n" unless $ARGV[0];
+my $transp = int(shift);
+
+my @notes  = qw(C  C# D Eb E  F  F# G Ab A Bb B);  # main notes
+my @notes2 = qw(B# Db D D# Fb E# Gb G G# A A# Cb); # alt. notation
+my %lookup = ();
+for (my $i = 0; $i < 12; $i++) {
+    $lookup{$notes[$i]} = $i;
+    $lookup{$notes2[$i]} = $i;
+}
+
+sub transp($) {
+    my $note = shift;
+    return $note if $note =~ /^\[/; # ignore text in [brackets]
+    my $tone = $lookup{$note};
+    my $new_tone = ($tone + $transp) % 12;
+    return $notes[$new_tone];
+}
+
+while (<>) {
+    s/\[[^\[\]]*\]|[A-G][b#]?/transp($&)/eg  # replace note of a chord or
+                                             # [comments] in brackets
+        if m/^(?:[A-G][b\#]?                            # chord (main note,
+               (?:m|maj|dim|sus|add|no|[-+b\#]|[0-9]+)* #        chord type,
+               (?:\/[A-G][b\#]?)*                       #        bass note)
+              |[-|]                                     # bar separators
+              |\[[^\[\]]*\]                             # form ([Vers 1] etc.)
+              |\s+)*$/x;
+
+    print;
+}
